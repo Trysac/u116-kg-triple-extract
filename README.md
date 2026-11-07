@@ -1,48 +1,45 @@
-# kg-triple-extract
+# trysac-kg-triple-extract
 
-[![PyPI version](https://img.shields.io/pypi/v/trysac-kg-triple-extract)](https://pypi.org/project/trysac-kg-triple-extract/)
-[![License: MIT](https://img.shields.io/pypi/l/trysac-kg-triple-extract)](LICENSE)
-[![CI](https://github.com/Trysac/u116-kg-triple-extract/actions/workflows/ci.yml/badge.svg)](https://github.com/Trysac/u116-kg-triple-extract/actions/workflows/ci.yml)
+Extracts grounded subject-predicate-object triples from text using an injected LLM. Features verbatim evidence verification, predicate allowlists, and a merged, normalized knowledge graph. Zero external dependencies.
 
-Extract grounded subject-predicate-object triples from text with an injected LLM, verbatim evidence checks, predicate allowlists and a merged, normalised knowledge graph
+## The Problem
 
-## Problem
+Knowledge graphs built by asking an LLM for triples fill up with relations the text never states, entity names that differ only in case, and predicates in ten spellings. Without grounding and normalisation, the graph cannot be trusted for retrieval. This library extracts triples chunk by chunk, keeps only those whose evidence is quoted from the source, and merges them into a normalized graph.
 
-Describe in two or three sentences the concrete problem this utility solves, who hits it, and what
-they do today without it. Replace this paragraph when the first real feature lands.
+## Installation
 
-## Install
-
-```sh
-pip install trysac-kg-triple-extract
-# or
-uv add trysac-kg-triple-extract
+```bash
+pip install .
 ```
-
-Requires Python 3.10 or newer. No runtime dependencies.
 
 ## Usage
 
 ```python
-import kg_triple_extract
+from kg_triple_extract import FakeLLM, Graph, extract_triples
 
-# normalize() trims surrounding whitespace and lower-cases the text.
-print(kg_triple_extract.normalize("  Hello World "))  # -> "hello world"
-
-# Blank input is rejected explicitly instead of returning an empty string.
-try:
-    kg_triple_extract.normalize("   ")
-except ValueError as exc:
-    print(f"rejected: {exc}")
+text = "Ada Lovelace worked with Charles Babbage on the Analytical Engine."
+llm = FakeLLM(
+    lambda msgs: (
+        '[{"subject": "Ada Lovelace", "predicate": "worked_with", "object": "Charles Babbage", "evidence": "Ada Lovelace worked with Charles Babbage"}]'
+    )
+)
+extraction = extract_triples(text, llm, predicates=["worked_with"])
+graph = Graph.from_triples(extraction.triples)
+print(graph.to_json())
 ```
 
-## Documentation
+## API Summary
 
-- [Architecture](docs/ARCHITECTURE.md) and [decisions](docs/decisions/)
-- [Testing](docs/TESTING.md) and [security](docs/SECURITY.md)
-- [Project record](docs/PROJECT.md) and [stack](docs/STACK.md)
-- [Changelog](CHANGELOG.md) and [contributing guide](CONTRIBUTING.md)
+- **`extract_triples(text, llm, *, predicates=None, max_chars_per_call=4000, max_tokens=1024, max_input_chars=1_000_000, on_event=None) -> Extraction`**: Extracts triples from text.
+- **`parse_reply(reply, chunk, chunk_index, *, predicates=None) -> tuple[list[Triple], list[Rejection]]`**: Validates LLM output against source.
+- **`Graph.from_triples(triples)`**: Aggregates triples into a normalized structure.
+- **Errors**: `KgError` (raised for `input_too_large` or `invalid_option`).
+- **Limits**: Max 200 items per LLM call; fields limited to 1-200 characters; max 1,000,000 input characters.
 
-## License
+## Why not LangChain's LLMGraphTransformer?
 
-[MIT](LICENSE) (c) 2026 Miguel Gomez
+Unlike LangChain's solution, this library is provider-agnostic, enforces strict grounding via verbatim evidence verification, and uses explicit rejection codes for debugging hallucinations.
+
+## Security
+
+See [docs/SECURITY.md](docs/SECURITY.md) for the threat model and limits.

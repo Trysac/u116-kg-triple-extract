@@ -1,19 +1,17 @@
-# Security notes
+# Security
 
-## Threat model
+## Threat Model
 
-`trysac-kg-triple-extract` is a pure library without I/O. The main risks are:
+### Prompt Injection
+Untrusted documents may attempt prompt injection or tag closing attacks. The library mitigates this by:
+- Setting an explicit system prompt directing the LLM to ignore instructions inside `<document>` tags.
+- Escaping all occurrences of `</document` tags inside document chunks before LLM submission.
 
-- **Supply chain**: a compromised dependency or CI action. Mitigation: no runtime dependencies,
-  Dependabot weekly updates, actions pinned to major versions, minimal workflow permissions.
-- **Leaked secrets**: tokens committed by mistake. Mitigation: `gitleaks` runs in the local gates
-  and in CI; `.env` files are git-ignored.
-- **Untrusted input**: callers may pass hostile strings. Mitigation: validate input and fail with
-  explicit exceptions; never `eval`, `exec` or deserialize untrusted data.
+### Resource Exhaustion
+To protect against unbounded computation and memory usage:
+- Input texts exceeding `max_input_chars` (default 1,000,000) are rejected with `KgError('input_too_large')`.
+- Per-reply items are capped at 200.
+- Field lengths are strictly bounded between 1 and 200 characters.
 
-## Publishing
-
-Releases are published to PyPI with trusted publishing (OIDC) when available, never with a
-long-lived token stored in the repository.
-
-To report a vulnerability, see [SECURITY.md](../SECURITY.md).
+### Non-Grounded Hallucinations
+Triples claiming relations unsupported by the text are rejected using strict substring verification on whitespace-collapsed text and evidence containment checks.

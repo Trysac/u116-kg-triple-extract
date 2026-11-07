@@ -9,4 +9,5 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Implement grounded knowledge graph triple extraction with LLMPort, grounding verification, and normalized Graph representation.
 - Initial project structure from the factory utility template.
