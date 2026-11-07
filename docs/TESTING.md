@@ -1,20 +1,12 @@
 # Testing
 
-## Running
+## Tests
 
-```sh
-uv run pytest --cov=kg_triple_extract   # tests with coverage report
-uv run python scripts/check.py      # every gate, as CI and the factory run it
-```
-
-## Policy
-
-- Branch coverage of `src/kg_triple_extract` must stay at or above 80 %; the gate fails below it.
-- Tests exercise the public API (`import kg_triple_extract`) and assert every observable effect:
-  return values, raised exceptions and their messages.
-- Each bug fix starts with a failing test that reproduces it.
-- Tests are deterministic: no network, no wall clock, no dependence on test order.
-
-## Layout
-
-`tests/test_<module>.py` mirrors each public module. Shared fixtures go in `tests/conftest.py`.
+The repository contains a comprehensive suite in `tests/test_kg_triple_extract.py`. These tests cover:
+- Acceptance criteria, including `RecordedLLM` basic extraction and `FakeLLM` behavior.
+- Grounding rejection logic (evidence mismatch, subject/object absence).
+- Predicate allowlist enforcement and normalization (`Worked With` to `worked_with`).
+- Exception propagation and `invalid_json` handling.
+- Chunking logic and size limit validation.
+- Graph normalization, ID collapsing, and JSON serialization correctness.
+- Event callbacks.
