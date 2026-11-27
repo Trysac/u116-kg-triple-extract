@@ -8,8 +8,10 @@ Knowledge graphs built by asking an LLM for triples fill up with relations the t
 
 ## Installation
 
+Not published to PyPI yet. Install it from GitHub:
+
 ```bash
-pip install .
+pip install "git+https://github.com/Trysac/u116-kg-triple-extract"
 ```
 
 ## Usage
